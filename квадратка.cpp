@@ -8,6 +8,24 @@ enum number_roots {
     TWO_ROOTS
 };
 
+struct Test_Data
+{
+    int number;
+    double a,b,c;
+    double x1exp;
+    double x2exp;
+    int nRootsexp;
+};
+
+struct base_numbers
+{
+
+    double a,b,c;
+    double root_1;
+    double root_2;
+    int nRoots;
+};
+
 const double EPP = 1e-7;
 const int END_TEST = 3;
 const int windows_eof = 26;
@@ -18,12 +36,18 @@ void output(int nRoots, double root_1, double root_2);
 bool compare_doubles(double a, double b);
 void skipline();
 void RunTest(int num_test, double a, double b, double c, double x1exp, double x2exp, int nRootsexp);
+double maximum(double a, double b);
+double minimum(double a, double b) ;
 
 int main() {
-    RunTest(1, 1, 1, -6, -3, 2, 2);
-    RunTest(2, 1,-4, 4, 2, 0, 1);
-    RunTest(3, 2, -3, 1, 0.5, 1, 2);
-    double a = NAN, b = NAN, c = NAN, root_1 = NAN, root_2 = NAN;
+    struct Test_Data test1 = {.number = 1, .a = 1, .b = 1,  .c = -6, .x1exp = -3, .x2exp = 2, .nRoots = 2};
+    struct Test_Data test2 = {.number = 2, .a = 1, .b = -4, .c = 4,  .x1exp = 2, .x2exp = 2, .nRoots = 1};
+    struct Test_Data test3 = {.number = 3, .a = 2, .b = -3, .c = 1, .x1exp = 0.5, .x2exp = 1, .nRoots = 2};
+    RunTest(test1);
+    RunTest(test2);
+    RunTest(test3);
+    struct base_numbers numbers = {.a = NAN, .b = NAN, .c = NAN, .root_1 = NAN, .root_2 = NAN, .nRoots = NAN} ;
+    double a = NAN, b = NAN, c = NAN, root_1 = NAN, root_2 = NAN; // TODO: add structure
     input(&a, &b, &c);
     enum number_roots nRoots = solve_square(a, b, c, &root_1, &root_2);
     output(nRoots, root_1, root_2);
@@ -50,6 +74,7 @@ enum number_roots solve_square(double a, double b, double c, double* root_1, dou
         if (compare_doubles(b,0) == false)
         {
             *root_1 = -c/b;
+            *root_2 = -c/b;
             return ONE_ROOTS;
         } else {
             if (compare_doubles(c,0) == true)
@@ -66,7 +91,8 @@ enum number_roots solve_square(double a, double b, double c, double* root_1, dou
         if (compare_doubles(d,0) == true)
         {
             *root_1 = -b/(2*a);
-            return ONE_ROOTS;
+            *root_2 = -b/(2*a);
+            return TWO_ROOTS;
         }
         if (d > 0)
         {
@@ -110,22 +136,59 @@ bool compare_doubles(double a,double b) {
         }
 }
 void skipline() {
-    char c = getchar();
+    int c = getchar();
     while (c != '\n' && c != EOF && c != windows_eof)
     {
         c = getchar();
     }
 }
 
-void RunTest(int num_test, double a, double b, double c, double x1exp, double x2exp, int nRootsexp)
+void RunTest(struct Test_Data test)
 {
-    double x1 = 0, x2 = 0;
-    int nRoots = solve_square(a,b,c, &x1, &x2);
-    if (nRoots != nRootsexp || x1 != max(x1exp, x2exp) ||  x2 != min(x2exp, x1exp))
+    double x1 = NAN, x2 = NAN;//test->a (*test).a mass[2] == *(mass+2)
+    int nRoots = solve_square(a,b,c, &x1, &x2); //
+    if (nRoots != test.nRootsexp || x1 != maximum(test.x1exp, test.x2exp) || x2 != minimum(x1exp, x2exp))
     {
-        printf("Ошибка теста %d: a = %lg, b = %lg, c = %lg, root_1 = %lg, root_2 = %lg, nRoots = %d\n Ожидаемые результаты: root_1 = %lg, root_2 = %lg, nRoots = %lg\n",num_test, a, b, c, x1, x2, nRoots, x1exp, x2exp, nRootsexp);
-    } else
+        if (nRootsexp == 2 )
+        {
+            printf("Ошибка теста %d: a = %lg, b = %lg, c = %lg, root_1 = %lg, root_2 = %lg, nRoots = %d\n"
+                "Ожидаемые результаты: root_1 = %lg, root_2 = %lg, nRoots = %d\n",num_test, a, b, c, x1, x2, nRoots, x1exp, x2exp, nRootsexp);
+        }
+        else if (nRootsexp == 1 || x2 != x1)
+        {
+                printf("Ошибка теста %d: a = %lg, b = %lg, c = %lg, root_1 = %lg, root_2 = %lg, nRoots = %d\n"
+                "Ожидаемые результаты: root_1 = %lg, root_2 = %lg nRoots = %d\n",num_test, a, b, c, x1, x2, nRoots, x1exp, x2exp, nRootsexp);
+        }
+        else if (nRootsexp == 0)
+        {
+                 printf("Ошибка теста %d: a = %lg, b = %lg, c = %lg, root_1 = %lg, root_2 = %lg, nRoots = %d\n"
+                "Ожидаемые результаты: Нет решений, nRoots = %d\n",num_test, a, b, c, x1, x2, nRoots, nRootsexp);
+        }
+
+    }
+    else
     {
         printf("Тест %d пройден\n", num_test);
     }
+}
+
+double maximum(double a, double b)
+{
+    if (a > b)
+    {
+        return a;
+    }
+    else
+    {
+        return b;
+    }
+}
+
+double minimum(double a, double b)
+{
+    if (a < b)
+    {
+        return a;
+    } else
+        return b;
 }
